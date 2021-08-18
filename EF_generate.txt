@@ -1,0 +1,1 @@
+dotnet ef dbcontext scaffold "Server=119.59.115.198;user id=sa; password=Welcome-22; Database=POS_2021;" Microsoft.EntityFrameworkCore.SqlServer -o Entities -c DatabaseContext --context-dir Data -f
