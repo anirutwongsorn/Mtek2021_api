@@ -1,4 +1,3 @@
-using System.Net.Mime;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -17,7 +16,8 @@ namespace MtekApi.Services
 {
    public class ProductService : IProductService
    {
-      private CultureInfo th_TH = new CultureInfo("th-TH");
+      //private CultureInfo th_TH = new CultureInfo("th-TH");
+      private CultureInfo en_US = new CultureInfo("en-US");
       private string conStr = "";
 
       private string imgUrl = "";
@@ -70,7 +70,7 @@ namespace MtekApi.Services
                      Stock = decimal.Parse(dr["STOCK"].ToString()),
                      Blqty = decimal.Parse(dr["BLQTY"].ToString()),
                      ImgPath = imgUrl + dr["IMG_PATH"].ToString(),
-                     //Lsactv = DateTime.Parse(dr["LASTV"].ToString(), th_TH),
+                     Lsactv = DateTime.Parse(dr["LASTV"].ToString(), en_US),
                   });
                }
                dr.Close();
@@ -147,11 +147,53 @@ namespace MtekApi.Services
                      Gpcd = dr["GPCD"].ToString(),
                      Gpdesc = dr["GPDESC"].ToString(),
                      Uom = dr["UOM"].ToString(),
-                     Stock = int.Parse(dr["STOCK"].ToString() == "" ? "0" : dr["STOCK"].ToString()),
-                     Blqty = int.Parse(dr["BLQTY"].ToString() == "" ? "0" : dr["BLQTY"].ToString()),
+                     Stock = double.Parse(dr["STOCK"].ToString() == "" ? "0" : dr["STOCK"].ToString()),
+                     Blqty = double.Parse(dr["BLQTY"].ToString() == "" ? "0" : dr["BLQTY"].ToString()),
                      ImgPath = imgUrl + dr["IMG_PATH"].ToString(),
                      //Lsactv = DateTime.Now
-                     //Lsactv = DateTime.Parse(dr["LASTV"].ToString()),
+                     Lsactv = DateTime.Parse(dr["LASTV"].ToString(), en_US),
+                  });
+               }
+               dr.Close();
+            }
+         }
+         return ProductCusModel;
+      }
+
+      public async Task<List<ProductCusDto>> GetProductTrans(string pcd)
+      {
+         var ProductCusModel = new List<ProductCusDto>();
+         using (var conn = new SqlConnection(conStr))
+         {
+            SqlDataReader dr;
+            var sql = "GET_ProductTrans";
+            var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@pcd", pcd);
+            cmd.CommandType = CommandType.StoredProcedure;
+            if (conn.State == ConnectionState.Closed) { await conn.OpenAsync(); }
+            dr = await cmd.ExecuteReaderAsync();
+            if (dr.HasRows)
+            {
+               while (dr.Read())
+               {
+                  ProductCusModel.Add(new ProductCusDto
+                  {
+                     Billcd = dr["BILLCD"].ToString(),
+                     CusId = int.Parse(dr["CUS_ID"].ToString()),
+                     FullName = dr["FULL_NAME"].ToString(),
+                     ShopName = dr["SHOP_NAME"].ToString(),
+                     PhoneNo = dr["PHONE_NO"].ToString(),
+                     Postcd = dr["POSTCD"].ToString(),
+                     Pcd = dr["PCD"].ToString(),
+                     Pdesc = dr["PDESC"].ToString(),
+                     Gpcd = dr["GPCD"].ToString(),
+                     Gpdesc = dr["GPDESC"].ToString(),
+                     Uom = dr["UOM"].ToString(),
+                     Stock = double.Parse(dr["STOCK"].ToString() == "" ? "0" : dr["STOCK"].ToString()),
+                     Blqty = double.Parse(dr["QTY"].ToString() == "" ? "0" : dr["QTY"].ToString()),
+                     ImgPath = imgUrl + dr["IMG_PATH"].ToString(),
+                     //Lsactv = DateTime.Now
+                     Lsactv = DateTime.Parse(dr["LASTV"].ToString(), en_US),
                   });
                }
                dr.Close();

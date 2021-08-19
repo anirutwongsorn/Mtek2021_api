@@ -48,7 +48,7 @@ namespace pospos_mobile.Controllers
          try
          {
             var model = await productService.GetLocalProduct();
-            ProductRes.data = model;
+            ProductRes.data = model.OrderBy(p => p.Pdesc).ToList();
          }
          catch (Exception ex)
          {
@@ -125,6 +125,33 @@ namespace pospos_mobile.Controllers
             ProductCusRes.responseMsg = ex.Message.ToString();
             return BadRequest(ProductCusRes);
          }
+         return Ok(ProductCusRes);
+      }
+
+      [HttpGet("GetProductTrans")]
+      public async Task<ActionResult> GetProductTrans(string pcd)
+      {
+         var account = await GetUserInfo();
+         if (!account.IsAdmin)
+         {
+            return Unauthorized();
+         }
+
+         if (pcd != null)
+         {
+            try
+            {
+               var model = await productService.GetProductTrans(pcd);
+               ProductCusRes.data = model;
+            }
+            catch (Exception ex)
+            {
+               ProductCusRes.IsOk = false;
+               ProductCusRes.responseMsg = ex.Message.ToString();
+               return BadRequest(ProductCusRes);
+            }
+         }
+
          return Ok(ProductCusRes);
       }
 

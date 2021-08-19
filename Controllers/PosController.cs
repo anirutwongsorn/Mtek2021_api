@@ -64,7 +64,7 @@ namespace pospos_mobile.Controllers
             PosRes.responseMsg = ex.InnerException.Message.ToString();
             return BadRequest(PosRes);
          }
-         return Ok(PosRes);
+         return StatusCode(201);
       }
 
       [HttpGet("GetSaleReport")]
@@ -72,6 +72,11 @@ namespace pospos_mobile.Controllers
       {
          try
          {
+            if (dateFrom == new DateTime())
+            {
+               dateFrom = DateTime.Now.Date;
+               dateTo = DateTime.Now.Date;
+            }
             SaleReportRes.data = await posService.GetSaleReport(dateFrom, dateTo);
          }
          catch (Exception ex)

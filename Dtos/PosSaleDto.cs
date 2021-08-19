@@ -19,6 +19,6 @@ public class PosSaleDto
    public decimal Prcs { get; set; } = 0;
    public decimal Discount { get; set; } = 0;
    public decimal Amount { get; set; } = 0;
-   //public string ImgPath { get; set; }
+   public string Remark { get; set; }
 
 }

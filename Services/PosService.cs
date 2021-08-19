@@ -29,60 +29,57 @@ namespace MtekApi.Services
          billWo = productSale.Select(fromBillWoSaleDto).ToList();
 
          //=======Looking BillCd==========
-         using (dbContext)
+         var _guid = productSale[0].BillCd;
+         var _lookingGuid = await dbContext.TbBillHeaders.Where(p => p.Guid == _guid).FirstOrDefaultAsync();
+         if (_lookingGuid == null)
          {
-            var _guid = productSale[0].BillCd;
-            var _lookingGuid = await dbContext.TbBillHeaders.Where(p => p.Guid == _guid).FirstOrDefaultAsync();
-            if (_lookingGuid == null)
-            {
-               int _lookingBill = (await dbContext.TbBillHeaders.CountAsync()) + 1;
-               billCd = productSale[0].billtype + billCd + "-" + _lookingBill.ToString();
+            int _lookingBill = (await dbContext.TbBillHeaders.CountAsync()) + 1;
+            billCd = productSale[0].billtype + billCd + "-" + _lookingBill.ToString();
 
-               billHeader.Billcd = billCd;
-               billHeader.Guid = _guid;
-               billWo.ForEach(p => p.Billcd = billCd);
+            billHeader.Billcd = billCd;
+            billHeader.Guid = _guid;
+            billWo.ForEach(p => p.Billcd = billCd);
 
-               dbContext.TbBillHeaders.Add(billHeader);
-               dbContext.TbBillWos.AddRange(billWo);
-            }
-            else
-            {
-               billCd = _lookingGuid.Billcd;
-               billWo.ForEach(p => p.Billcd = billCd);
-               dbContext.TbBillWos.AddRange(billWo);
-            }
-
-
-            return await dbContext.SaveChangesAsync();
+            dbContext.TbBillHeaders.Add(billHeader);
+            // foreach (var item in billWo)
+            // {
+            //    dbContext.TbBillWos.Add(item);
+            // }
+            dbContext.TbBillWos.AddRange(billWo);
          }
-
-
+         else
+         {
+            billCd = _lookingGuid.Billcd;
+            billWo.ForEach(p => p.Billcd = billCd);
+            // foreach (var item in billWo)
+            // {
+            //    dbContext.TbBillWos.Add(item);
+            // }
+            dbContext.TbBillWos.AddRange(billWo);
+         }
+         return await dbContext.SaveChangesAsync();
       }
 
       public async Task<List<SaleReportDto>> GetSaleReport(DateTime dateFrom, DateTime dateTo)
       {
          var saleModel = new List<SaleReportDto>();
-         using (dbContext)
-         {
-            saleModel = (await dbContext.TbBillHeaders
-                       .Where(p => p.Actv.Value.Date >= dateFrom.Date && p.Actv.Value.Date <= dateTo.Date)
-                       .Include(p => p.TbBillWos).ToListAsync()).Select(SaleReportDto.FromBillHeader).ToList();
-            return saleModel;
-         }
-
+         saleModel = (await dbContext.TbBillHeaders
+                     .Where(p => p.Actv.Value.Date >= dateFrom.Date && p.Actv.Value.Date <= dateTo.Date)
+                     .Include(c => c.Cus)
+                     .Include(p => p.TbBillWos)
+                     .Include(p => p.TbBillWos)
+                     .ToListAsync()).Select(SaleReportDto.FromBillHeader).ToList();
+         return saleModel;
       }
 
       public async Task<List<SaleReportDto>> GetSaleReportByCus(int cusid, string pcd)
       {
          var saleModel = new List<SaleReportDto>();
-         using (dbContext)
-         {
-            saleModel = (await dbContext.TbBillHeaders
+         saleModel = (await dbContext.TbBillHeaders
                        .Where(p => p.CusId == cusid)
                        .Include(p => p.Cus)
                        .Include(p => p.TbBillWos.Where(p => p.Pcd == pcd)).ToListAsync()).Select(SaleReportDto.FromBillHeader).ToList();
-            return saleModel;
-         }
+         return saleModel;
 
       }
 
@@ -91,33 +88,30 @@ namespace MtekApi.Services
          var _dFrom = DateTime.Now.AddDays(-15).Date;
          var _dTo = DateTime.Now.Date;
          var _saleModel = new List<SaleSummaryDateDto>();
-         using (dbContext)
+         var _sumBill = await dbContext.TbBillHeaders.Where(p => p.Actv.Value.Date >= _dFrom && p.Actv.Value.Date <= _dTo).ToListAsync();
+         var _dataShaping = (from c in _sumBill
+                             group c by c.Actv.Value.Date into cg
+                             select new
+                             {
+                                SaleDate = cg.FirstOrDefault().Actv.Value.Date,
+                                Amount = (double)cg.Sum(p => p.GAmt),
+                                Discount = (double)cg.Sum(p => p.GDiscnt),
+                                Total = (double)cg.Sum(p => p.GTotal),
+                             }).OrderBy(p => p.SaleDate).ToList();
+         double _difVal = 0;
+         foreach (var item in _dataShaping)
          {
-            var _sumBill = await dbContext.TbBillHeaders.Where(p => p.Actv.Value.Date >= _dFrom && p.Actv.Value.Date <= _dTo).ToListAsync();
-            var _dataShaping = (from c in _sumBill
-                                group c by c.Actv.Value.Date into cg
-                                select new
-                                {
-                                   SaleDate = cg.FirstOrDefault().Actv.Value.Date,
-                                   Amount = (double)cg.Sum(p => p.GAmt),
-                                   Discount = (double)cg.Sum(p => p.GDiscnt),
-                                   Total = (double)cg.Sum(p => p.GTotal),
-                                }).OrderBy(p => p.SaleDate).ToList();
-            double _difVal = 0;
-            foreach (var item in _dataShaping)
+            if (_difVal == 0) { _difVal = item.Total; }
+            _difVal = item.Total - _difVal;
+            _saleModel.Add(new SaleSummaryDateDto
             {
-               if (_difVal == 0) { _difVal = item.Total; }
-               _difVal = item.Total - _difVal;
-               _saleModel.Add(new SaleSummaryDateDto
-               {
-                  SaleDate = item.SaleDate,
-                  Amount = item.Amount,
-                  Discount = item.Discount,
-                  Total = item.Total,
-                  DifValue = _difVal
-               });
-               _difVal = item.Total;
-            }
+               SaleDate = item.SaleDate,
+               Amount = item.Amount,
+               Discount = item.Discount,
+               Total = item.Total,
+               DifValue = _difVal
+            });
+            _difVal = item.Total;
          }
          return _saleModel;
       }
@@ -125,37 +119,34 @@ namespace MtekApi.Services
       public async Task<List<SaleSummaryDateDto>> GetSaleSummaryByDateByEmployee(DateTime dateFrom, DateTime dateTo)
       {
          var _saleModel = new List<SaleSummaryDateDto>();
-         using (dbContext)
+         var _sumBill = await dbContext.TbBillHeaders.Where(p => p.Actv.Value.Date >= dateFrom && p.Actv.Value.Date <= dateTo).ToListAsync();
+         var _dataShaping = (from c in _sumBill
+                             group c by c.Emp into cg
+                             select new
+                             {
+                                SaleDate = dateFrom.Date,
+                                Employee = cg.FirstOrDefault().Emp,
+                                Amount = (double)cg.Sum(p => p.GAmt),
+                                Discount = (double)cg.Sum(p => p.GDiscnt),
+                                Total = (double)cg.Sum(p => p.GTotal),
+                                BillCount = cg.ToList().Count
+                             }).OrderBy(p => p.SaleDate).ToList();
+         double _difVal = 0;
+         foreach (var item in _dataShaping)
          {
-            var _sumBill = await dbContext.TbBillHeaders.Where(p => p.Actv.Value.Date >= dateFrom && p.Actv.Value.Date <= dateTo).ToListAsync();
-            var _dataShaping = (from c in _sumBill
-                                group c by c.Emp into cg
-                                select new
-                                {
-                                   SaleDate = dateFrom.Date,
-                                   Employee = cg.FirstOrDefault().Emp,
-                                   Amount = (double)cg.Sum(p => p.GAmt),
-                                   Discount = (double)cg.Sum(p => p.GDiscnt),
-                                   Total = (double)cg.Sum(p => p.GTotal),
-                                   BillCount = cg.ToList().Count
-                                }).OrderBy(p => p.SaleDate).ToList();
-            double _difVal = 0;
-            foreach (var item in _dataShaping)
+            if (_difVal == 0) { _difVal = item.Total; }
+            _difVal = item.Total - _difVal;
+            _saleModel.Add(new SaleSummaryDateDto
             {
-               if (_difVal == 0) { _difVal = item.Total; }
-               _difVal = item.Total - _difVal;
-               _saleModel.Add(new SaleSummaryDateDto
-               {
-                  SaleDate = item.SaleDate,
-                  Employee = item.Employee,
-                  Amount = item.Amount,
-                  Discount = item.Discount,
-                  Total = item.Total,
-                  DifValue = _difVal,
-                  BillCount = item.BillCount
-               });
-               _difVal = item.Total;
-            }
+               SaleDate = item.SaleDate,
+               Employee = item.Employee,
+               Amount = item.Amount,
+               Discount = item.Discount,
+               Total = item.Total,
+               DifValue = _difVal,
+               BillCount = item.BillCount
+            });
+            _difVal = item.Total;
          }
          return _saleModel;
       }
@@ -202,6 +193,7 @@ namespace MtekApi.Services
             Paidtype = "N",
             Isactv = "Y",
             Actv = DateTime.Now,
+            Remark = posSale.Remark
          };
       }
    }

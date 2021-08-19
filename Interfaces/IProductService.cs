@@ -14,7 +14,7 @@ namespace MtekApi.Interfaces
 
       Task<List<ProductDto>> GetProductById(string pcd);
 
-      // Task<List<TbProduct>> GetProductFavorite();
+      Task<List<ProductCusDto>> GetProductTrans(string pcd);
 
       Task<int> PostAddNewProduct(ProductRequestDtos model);
 

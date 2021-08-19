@@ -2,6 +2,7 @@ using System;
 
   public class ProductCusDto
   {
+   public string Billcd { get; set; } = "";
     public int CusId { get; set; }
     public string FullName { get; set; }
     public string ShopName { get; set; }
@@ -13,7 +14,7 @@ using System;
     public string Gpdesc { get; set; }
     public string Uom { get; set; }
     public string ImgPath { get; set; }
-    public int Stock { get; set; } = 0;
-    public int Blqty { get; set; } = 0;
+   public double Stock { get; set; } = 0;
+   public double Blqty { get; set; } = 0;
     public DateTime Lsactv { get; set; } = DateTime.Now;
   }
