@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using mtek_api.Data;
 using mtek_api.Entities;
+using MtekApi.Dtos;
 using MtekApi.Interfaces;
 
 namespace MtekApi.Services
@@ -18,6 +19,7 @@ namespace MtekApi.Services
    {
       //private CultureInfo th_TH = new CultureInfo("th-TH");
       private CultureInfo en_US = new CultureInfo("en-US");
+      private CultureInfo th_TH = new CultureInfo("th-TH");
       private string conStr = "";
 
       private string imgUrl = "";
@@ -152,6 +154,7 @@ namespace MtekApi.Services
                      ImgPath = imgUrl + dr["IMG_PATH"].ToString(),
                      //Lsactv = DateTime.Now
                      Lsactv = DateTime.Parse(dr["LASTV"].ToString(), en_US),
+                     //Updated = dr["LASTV"].ToString(),
                   });
                }
                dr.Close();
@@ -193,7 +196,100 @@ namespace MtekApi.Services
                      Blqty = double.Parse(dr["QTY"].ToString() == "" ? "0" : dr["QTY"].ToString()),
                      ImgPath = imgUrl + dr["IMG_PATH"].ToString(),
                      //Lsactv = DateTime.Now
+                     //Updated = dr["LASTV"].ToString(),
                      Lsactv = DateTime.Parse(dr["LASTV"].ToString(), en_US),
+                  });
+               }
+               dr.Close();
+            }
+         }
+         return ProductCusModel;
+      }
+
+      public async Task<List<ProductCusDto>> GetProductTransByCus(int cusid, string pcd)
+      {
+         var ProductCusModel = new List<ProductCusDto>();
+         using (var conn = new SqlConnection(conStr))
+         {
+            SqlDataReader dr;
+            var sql = "GET_ProductTransByCus";
+            var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@cusid", cusid);
+            cmd.Parameters.AddWithValue("@pcd", pcd);
+            cmd.CommandType = CommandType.StoredProcedure;
+            if (conn.State == ConnectionState.Closed) { await conn.OpenAsync(); }
+            dr = await cmd.ExecuteReaderAsync();
+            if (dr.HasRows)
+            {
+               while (dr.Read())
+               {
+                  ProductCusModel.Add(new ProductCusDto
+                  {
+                     Billcd = dr["BILLCD"].ToString(),
+                     CusId = int.Parse(dr["CUS_ID"].ToString()),
+                     FullName = dr["FULL_NAME"].ToString(),
+                     ShopName = dr["SHOP_NAME"].ToString(),
+                     PhoneNo = dr["PHONE_NO"].ToString(),
+                     Postcd = dr["POSTCD"].ToString(),
+                     Pcd = dr["PCD"].ToString(),
+                     Pdesc = dr["PDESC"].ToString(),
+                     Gpcd = dr["GPCD"].ToString(),
+                     Gpdesc = dr["GPDESC"].ToString(),
+                     Uom = dr["UOM"].ToString(),
+                     PrcCost = double.Parse(dr["PRC_COST"].ToString() == "" ? "0" : dr["PRC_COST"].ToString()),
+                     PrcSale = double.Parse(dr["PRCS"].ToString() == "" ? "0" : dr["PRCS"].ToString()),
+                     Stock = double.Parse(dr["STOCK"].ToString() == "" ? "0" : dr["STOCK"].ToString()),
+                     Blqty = double.Parse(dr["QTY"].ToString() == "" ? "0" : dr["QTY"].ToString()),
+                     Amount = double.Parse(dr["AMT"].ToString() == "" ? "0" : dr["AMT"].ToString()),
+                     ImgPath = imgUrl + dr["IMG_PATH"].ToString(),
+                     //Lsactv = DateTime.Now
+                     Lsactv = DateTime.Parse(dr["LASTV"].ToString(), en_US),
+                     //Updated = dr["LASTV"].ToString(),
+                  });
+               }
+               dr.Close();
+            }
+         }
+         return ProductCusModel;
+      }
+
+      public async Task<List<ProductCusDto>> GetProductInventoryByCusId(int cusid)
+      {
+         var ProductCusModel = new List<ProductCusDto>();
+         using (var conn = new SqlConnection(conStr))
+         {
+            SqlDataReader dr;
+            var sql = "GET_AllProductBranchByCusId";
+            var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@cusid", cusid);
+            cmd.CommandType = CommandType.StoredProcedure;
+            if (conn.State == ConnectionState.Closed) { await conn.OpenAsync(); }
+            dr = await cmd.ExecuteReaderAsync();
+            if (dr.HasRows)
+            {
+               while (dr.Read())
+               {
+                  ProductCusModel.Add(new ProductCusDto
+                  {
+                     CusId = int.Parse(dr["CUS_ID"].ToString()),
+                     FullName = dr["FULL_NAME"].ToString(),
+                     ShopName = dr["SHOP_NAME"].ToString(),
+                     PhoneNo = dr["PHONE_NO"].ToString(),
+                     Postcd = dr["POSTCD"].ToString(),
+                     Pcd = dr["PCD"].ToString(),
+                     Pdesc = dr["PDESC"].ToString(),
+                     PrcSale = double.Parse(dr["PRC_SALE"].ToString() == "" ? "0" : dr["PRC_SALE"].ToString()),
+                     Gpcd = dr["GPCD"].ToString(),
+                     Gpdesc = dr["GPDESC"].ToString(),
+                     Uom = dr["UOM"].ToString(),
+                     AllQty = double.Parse(dr["AllQty"].ToString() == "" ? "0" : dr["AllQty"].ToString()),
+                     InQty = double.Parse(dr["InQty"].ToString() == "" ? "0" : dr["InQty"].ToString()),
+                     OutQty = double.Parse(dr["OutQty"].ToString() == "" ? "0" : dr["OutQty"].ToString()),
+                     Stock = double.Parse(dr["STOCK"].ToString() == "" ? "0" : dr["STOCK"].ToString()),
+                     Blqty = double.Parse(dr["BLQTY"].ToString() == "" ? "0" : dr["BLQTY"].ToString()),
+                     ImgPath = imgUrl + dr["IMG_PATH"].ToString(),
+                     Lsactv = DateTime.Parse(dr["LASTV"].ToString(), en_US),
+                     //Updated = dr["LASTV"].ToString(),
                   });
                }
                dr.Close();
@@ -248,6 +344,11 @@ namespace MtekApi.Services
       public async Task<List<ProductGroupDtos>> GetProductGroup()
       {
          return (await dbContext.TbProductGroups.ToListAsync()).Select(ProductGroupDtos.FromTbProductGroup).ToList();
+      }
+
+      public async Task<List<HomeBannerDtos>> GetHomeBanner()
+      {
+         return (await dbContext.TbBanners.ToListAsync()).Select(HomeBannerDtos.FromTbBanner).ToList();
       }
 
       private TbProduct FromProductDto(ProductRequestDtos model)

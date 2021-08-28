@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using mtek_api.Data;
 using mtek_api.Entities;
 using MtekApi.Installer;
+using System.Globalization;
 
 namespace MtekApi.Services
 {
@@ -104,11 +105,13 @@ namespace MtekApi.Services
       public string GenerateToken(AccountDtos account)
       {
          // key is case-sensitive
+         var en_US = new CultureInfo("en-US");
+         var dtString = DateTime.Now.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss", en_US);
          var claims = new[]{
                 new Claim(JwtRegisteredClaimNames.Sub, account.CusId.ToString()),
                 new Claim("role", account.ShopName),
                 new Claim("permission", account.IsAdmin.ToString()),
-                new Claim("expire", DateTime.Now.AddDays(1).ToString()),
+                new Claim("expire", dtString),
             };
 
          return BuildToken(claims);
@@ -119,11 +122,12 @@ namespace MtekApi.Services
          var token = new JwtSecurityTokenHandler().ReadToken(accessToken) as JwtSecurityToken;
 
          // key is case-sensitive
+         var en_US = new CultureInfo("en-US");
          var userId = token.Claims.First(claim => claim.Type == "sub").Value;
          var role = token.Claims.First(claim => claim.Type == "role").Value;
          var permission = token.Claims.First(claim => claim.Type == "permission").Value;
          var expire = token.Claims.First(claim => claim.Type == "expire").Value;
-         var _expireDate = DateTime.Parse(expire);
+         var _expireDate = DateTime.Parse(expire, en_US);
          if (_expireDate < DateTime.Now)
          {
             return null;

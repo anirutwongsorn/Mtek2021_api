@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using MtekApi.Dtos;
 
 namespace MtekApi.Interfaces
 {
@@ -14,17 +15,17 @@ namespace MtekApi.Interfaces
 
       Task<List<ProductDto>> GetProductById(string pcd);
 
+      Task<List<ProductCusDto>> GetProductInventoryByCusId(int cusid);
+
       Task<List<ProductCusDto>> GetProductTrans(string pcd);
+
+      Task<List<ProductCusDto>> GetProductTransByCus(int cusid, string pcd);
 
       Task<int> PostAddNewProduct(ProductRequestDtos model);
 
       Task<int> PutManageProduct(ProductRequestDtos model);
 
-      // Task<int> DeleteProduct(string pcd);
-
-      // Task<int> ReleaseProductToSale(string pcd);
-
-      // Task<int> ReturnToNormal(string pcd = "All");
+      Task<List<HomeBannerDtos>> GetHomeBanner();
 
       Task<(string errorMessage, string imageName)> UploadImage(List<IFormFile> formFiles);
 

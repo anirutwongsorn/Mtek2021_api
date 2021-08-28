@@ -1,3 +1,4 @@
+using System;
 
 public class PosSaleDto
 {
@@ -5,7 +6,7 @@ public class PosSaleDto
    public string BillCd { get; set; }
    public int CusId { get; set; }
    // public string Idcard { get; set; } = "0";
-   // public string Cusname { get; set; } = "ลูกค้าทั่วไป";
+   public string Cusname { get; set; } = "ลูกค้าทั่วไป";
    // public string Phoneno { get; set; } = "";
    public string Emp { get; set; } = "admin";
    public decimal GAmnt { get; set; } = 0;

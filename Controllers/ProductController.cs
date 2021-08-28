@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using MtekApi.Dtos;
 using MtekApi.Installer;
 using MtekApi.Interfaces;
 
@@ -21,6 +22,7 @@ namespace pospos_mobile.Controllers
       private ServiceResponse<List<ProductDto>> ProductRes;
       private ServiceResponse<List<ProductCusDto>> ProductCusRes;
       private ServiceResponse<List<ProductGroupDtos>> ProductGroupRes;
+      private ServiceResponse<List<HomeBannerDtos>> HomeBannerRes;
 
       private ServiceResponse<int> ResultRes;
 
@@ -33,6 +35,7 @@ namespace pospos_mobile.Controllers
          ProductRes = new ServiceResponse<List<ProductDto>>();
          ProductCusRes = new ServiceResponse<List<ProductCusDto>>();
          ProductGroupRes = new ServiceResponse<List<ProductGroupDtos>>();
+         HomeBannerRes = new ServiceResponse<List<HomeBannerDtos>>();
          ResultRes = new ServiceResponse<int>();
       }
 
@@ -155,6 +158,33 @@ namespace pospos_mobile.Controllers
          return Ok(ProductCusRes);
       }
 
+      [HttpGet("GetProductTransByCus")]
+      public async Task<ActionResult> GetProductTransByCus(int? cusid, string pcd)
+      {
+         var account = await GetUserInfo();
+         if (!account.IsAdmin)
+         {
+            return Unauthorized();
+         }
+
+         if (pcd != null && cusid != null)
+         {
+            try
+            {
+               var model = await productService.GetProductTransByCus((int)cusid, pcd);
+               ProductCusRes.data = model;
+            }
+            catch (Exception ex)
+            {
+               ProductCusRes.IsOk = false;
+               ProductCusRes.responseMsg = ex.Message.ToString();
+               return BadRequest(ProductCusRes);
+            }
+         }
+
+         return Ok(ProductCusRes);
+      }
+
       [HttpPost("PostAddNewProduct")]
       public async Task<ActionResult> PostAddNewProduct([FromForm] ProductRequestDtos model)
       {
@@ -201,7 +231,6 @@ namespace pospos_mobile.Controllers
          return StatusCode(201);
       }
 
-
       [HttpGet("GetProductGroup")]
       public async Task<ActionResult> GetProductGroup()
       {
@@ -216,6 +245,23 @@ namespace pospos_mobile.Controllers
             return BadRequest(ProductGroupRes);
          }
          return Ok(ProductGroupRes);
+      }
+
+      //==============Home banner=====================
+      [HttpGet("GetHomeBanner")]
+      public async Task<ActionResult> GetHomeBanner()
+      {
+         try
+         {
+            HomeBannerRes.data = await productService.GetHomeBanner();
+         }
+         catch (Exception ex)
+         {
+            HomeBannerRes.IsOk = false;
+            HomeBannerRes.responseMsg = ex.Message;
+            return BadRequest();
+         }
+         return Ok(HomeBannerRes);
       }
 
       private async Task<AccountDtos> GetUserInfo()

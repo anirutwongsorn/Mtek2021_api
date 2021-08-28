@@ -37,7 +37,17 @@ namespace MtekApi.Services
 
       public async Task<List<CustomerDtos>> GetCustomer()
       {
-         return (await dbContext.TbCustomers.Where(p => p.Isadmin == false).ToListAsync()).Select(CustomerDtos.FromCusTomer).ToList();
+         return (await dbContext.TbCustomers.Where(p => p.Isadmin == false && p.Isactv == false).ToListAsync()).Select(CustomerDtos.FromCusTomer).ToList();
+      }
+
+      public async Task<int> GetDefaultCustomer()
+      {
+         var model = await dbContext.TbCustomers.Where(p => p.Isactv == true).FirstOrDefaultAsync();
+         if (model == null)
+         {
+            throw new Exception("ไม่พบข้อมูลลูกค้า");
+         }
+         return model.CusId;
       }
 
       public async Task<List<CustomerDtos>> GetCustomerById(string cusid)

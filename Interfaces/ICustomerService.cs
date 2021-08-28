@@ -7,6 +7,8 @@ namespace MtekApi.Interfaces
    {
       Task<List<CustomerDtos>> GetCustomer();
 
+      Task<int> GetDefaultCustomer();
+
       Task<List<CustomerDtos>> GetCustomerById(string cusid);
 
       Task<int> AddNewCustomer(CustomerDtos model);

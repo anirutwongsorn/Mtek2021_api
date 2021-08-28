@@ -14,9 +14,13 @@ namespace MtekApi.Services
    {
       private CultureInfo en_US = new CultureInfo("en-US");
       private readonly DatabaseContext dbContext;
-      public PosService(DatabaseContext dbContext)
+
+      private readonly ICustomerService ICus;
+
+      public PosService(DatabaseContext dbContext, ICustomerService customerService)
       {
          this.dbContext = dbContext;
+         this.ICus = customerService;
       }
 
       public async Task<int> PostSale(List<PosSaleDto> productSale)
@@ -27,6 +31,13 @@ namespace MtekApi.Services
          //billHeader = productSale[0].Adapt<TbBillHeader>();
          billHeader = fromBillMainSaleDto(productSale[0]);
          billWo = productSale.Select(fromBillWoSaleDto).ToList();
+
+         //======= Check Qty must more than 0 ===========
+         productSale = productSale.Where(p => p.Qty > 0).ToList();
+         if (productSale.Count == 0)
+         {
+            return 0;
+         }
 
          //=======Looking BillCd==========
          var _guid = productSale[0].BillCd;
@@ -41,20 +52,12 @@ namespace MtekApi.Services
             billWo.ForEach(p => p.Billcd = billCd);
 
             dbContext.TbBillHeaders.Add(billHeader);
-            // foreach (var item in billWo)
-            // {
-            //    dbContext.TbBillWos.Add(item);
-            // }
             dbContext.TbBillWos.AddRange(billWo);
          }
          else
          {
             billCd = _lookingGuid.Billcd;
             billWo.ForEach(p => p.Billcd = billCd);
-            // foreach (var item in billWo)
-            // {
-            //    dbContext.TbBillWos.Add(item);
-            // }
             dbContext.TbBillWos.AddRange(billWo);
          }
          return await dbContext.SaveChangesAsync();

@@ -8,19 +8,26 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using MtekApi.Dtos;
 using MtekApi.Interfaces;
+using mtek_api.Data;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace MtekApi.Services
 {
    public class BillReportService : IBillReportService
    {
       private readonly IConfiguration configuration;
+
+      private readonly DatabaseContext dbContext;
+
       private string conStr = "", imgUrl = "";
 
       private CultureInfo en_US = new CultureInfo("en-US");
 
-      public BillReportService(IConfiguration config)
+      public BillReportService(IConfiguration config, DatabaseContext dbContext)
       {
          this.configuration = config;
+         this.dbContext = dbContext;
          conStr = configuration.GetConnectionString("ConnectionSqlServer");
          imgUrl = configuration.GetValue<string>("ImageUrl");
       }
@@ -103,5 +110,53 @@ namespace MtekApi.Services
          return model;
       }
 
+      public async Task<List<SaleReportDto>> GetSaleReportByCus(DateTime dateFrom, DateTime dateTo, int cusid)
+      {
+         var saleModel = new List<SaleReportDto>();
+         saleModel = (await dbContext.TbBillHeaders
+                     .Where(p => p.CusId == cusid && p.Actv.Value.Date >= dateFrom.Date && p.Actv.Value.Date <= dateTo.Date)
+                     .Include(c => c.Cus)
+                     .Include(p => p.TbBillWos)
+                     .Include(p => p.TbBillWos)
+                     .ToListAsync()).Select(SaleReportDto.FromBillHeader).ToList();
+         return saleModel;
+      }
+
+      public async Task<List<ProductCusDto>> GetSaleBillMainByCusid(int cusid)
+      {
+         var saleModel = new List<ProductCusDto>();
+         using (var conn = new SqlConnection(conStr))
+         {
+            SqlDataReader dr;
+            var sql = "GET_ALL_BILL_MAIN_CUS";
+            var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@cusid", cusid);
+            cmd.CommandType = CommandType.StoredProcedure;
+            if (conn.State == ConnectionState.Closed) { await conn.OpenAsync(); }
+            dr = await cmd.ExecuteReaderAsync();
+            if (dr.HasRows)
+            {
+               while (dr.Read())
+               {
+                  var _billcd = dr["BillCd"].ToString();
+                  if (_billcd.StartsWith("TG")) { continue; }
+                  saleModel.Add(new ProductCusDto
+                  {
+                     CusId = int.Parse(dr["CUS_ID"].ToString()),
+                     Billcd = _billcd,
+                     ShopName = dr["SHOP_NAME"].ToString(),
+                     FullName = dr["FULL_NAME"].ToString(),
+                     AddressNo = dr["ADDRESS_NO"].ToString(),
+                     Amount = double.Parse(dr["G_TOTAL"].ToString()),
+                     Remark = dr["REMARK"].ToString(),
+                     Lsactv = DateTime.Parse(dr["BILLDT"].ToString(), en_US),
+                     //Updated = dr["LASTV"].ToString(),
+                  });
+               }
+               dr.Close();
+            }
+         }
+         return saleModel;
+      }
    }
 }
