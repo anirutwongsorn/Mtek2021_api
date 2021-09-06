@@ -158,5 +158,45 @@ namespace MtekApi.Services
          }
          return saleModel;
       }
+
+      public async Task<List<SaleReportCusDtos>> GetSaleReportWithCommission()
+      {
+         var saleModel = new List<SaleReportCusDtos>();
+         using (var conn = new SqlConnection(conStr))
+         {
+            SqlDataReader dr;
+            var sql = "GET_CUSTOMER_WITH_COMMISSION";
+            var cmd = new SqlCommand(sql, conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+            if (conn.State == ConnectionState.Closed) { await conn.OpenAsync(); }
+            dr = await cmd.ExecuteReaderAsync();
+            if (dr.HasRows)
+            {
+               while (dr.Read())
+               {
+                  int _commission = int.Parse(dr["Commission"].ToString());
+                  double _amount = double.Parse(dr["Amount"].ToString());
+                  double _income = Math.Round(((double)_commission / 100) * _amount);
+                  saleModel.Add(new SaleReportCusDtos
+                  {
+                     CusId = int.Parse(dr["CUS_ID"].ToString()),
+                     ShopName = dr["SHOP_NAME"].ToString(),
+                     FullName = dr["FULL_NAME"].ToString(),
+                     AddressNo = dr["ADDRESS_NO"].ToString(),
+                     PhoneNo = dr["PHONE_NO"].ToString(),
+                     Postcd = dr["POSTCD"].ToString(),
+                     com = _commission,
+                     Amount = (int)_amount,
+                     Income = (int)_income,
+                     FromDate = DateTime.Parse(dr["FROM_DATE"].ToString(), en_US),
+                     ToDate = DateTime.Parse(dr["TO_DATE"].ToString(), en_US),
+                     //Updated = dr["LASTV"].ToString(),
+                  });
+               }
+               dr.Close();
+            }
+         }
+         return saleModel;
+      }
    }
 }

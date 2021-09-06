@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using mtek_api.Entities;
 
 namespace MtekApi.Interfaces
 {
@@ -14,5 +15,9 @@ namespace MtekApi.Interfaces
       Task<int> AddNewCustomer(CustomerDtos model);
 
       Task PutManageCustomer(CustomerDtos model);
+
+      Task<TbCusCommission> GetCustomerCommission(int cusid);
+
+      Task SetCustomerCommission(TbCusCommission model);
    }
 }

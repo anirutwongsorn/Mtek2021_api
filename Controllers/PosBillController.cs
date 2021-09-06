@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -21,6 +22,7 @@ namespace MtekApi.Controllers
       private ServiceResponse<List<PosBillDto>> BillPosRes;
       private ServiceResponse<List<SaleReportDto>> BillReportRes;
       private ServiceResponse<List<ProductCusDto>> BillMainRes;
+      private ServiceResponse<List<SaleReportCusDtos>> SaleRes;
       private readonly IBillReportService billService;
 
       public PosBillController(IBillReportService billService, IAccountService accService)
@@ -30,6 +32,7 @@ namespace MtekApi.Controllers
          BillPosRes = new ServiceResponse<List<PosBillDto>>();
          BillReportRes = new ServiceResponse<List<SaleReportDto>>();
          BillMainRes = new ServiceResponse<List<ProductCusDto>>();
+         SaleRes = new ServiceResponse<List<SaleReportCusDtos>>();
       }
 
       [HttpGet("GetSaleReport")]
@@ -99,6 +102,41 @@ namespace MtekApi.Controllers
             return BadRequest(BillMainRes);
          }
          return Ok(BillMainRes);
+      }
+
+      [HttpGet("GetSaleReportWithCommission")]
+      public async Task<ActionResult> GetSaleReportWithCommission()
+      {
+         try
+         {
+            var acc = await GetUserInfo();
+            var model = (await billService.GetSaleReportWithCommission()).Where(p => p.CusId == acc.CusId).ToList();
+            SaleRes.data = model;
+         }
+         catch (Exception ex)
+         {
+            SaleRes.IsOk = false;
+            SaleRes.responseMsg = ex.Message;
+            return BadRequest(SaleRes);
+         }
+         return Ok(SaleRes);
+
+      }
+
+      [HttpGet("GetSaleReportWithCommissionAdmin")]
+      public async Task<ActionResult> GetSaleReportWithCommissionAdmin()
+      {
+         try
+         {
+            SaleRes.data = await billService.GetSaleReportWithCommission();
+         }
+         catch (Exception ex)
+         {
+            SaleRes.IsOk = false;
+            SaleRes.responseMsg = ex.Message;
+            return BadRequest(SaleRes);
+         }
+         return Ok(SaleRes);
 
       }
 

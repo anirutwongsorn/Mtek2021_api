@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using mtek_api.Entities;
 using MtekApi.Installer;
 using MtekApi.Interfaces;
 
@@ -24,6 +25,8 @@ namespace pospos_mobile.Controllers
 
       private ServiceResponse<List<CustomerDtos>> CustomerRes;
 
+      private ServiceResponse<TbCusCommission> CustomerCommissionRes;
+
       private ServiceResponse<List<ProductCusDto>> ProductCusRes;
 
       private ServiceResponse<int> ResultRes;
@@ -36,6 +39,7 @@ namespace pospos_mobile.Controllers
 
          CustomerRes = new ServiceResponse<List<CustomerDtos>>();
          ProductCusRes = new ServiceResponse<List<ProductCusDto>>();
+         CustomerCommissionRes = new ServiceResponse<TbCusCommission>();
          ResultRes = new ServiceResponse<int>();
       }
 
@@ -181,6 +185,38 @@ namespace pospos_mobile.Controllers
             return BadRequest(ProductCusRes);
          }
          return Ok(ProductCusRes);
+      }
+
+      //=================GetCustomerCommission=====================
+      [HttpGet("GetCustomerCommission")]
+      public async Task<ActionResult> GetCustomerCommission(int cusid)
+      {
+         try
+         {
+            CustomerCommissionRes.data = await ICus.GetCustomerCommission(cusid);
+         }
+         catch (Exception ex)
+         {
+            CustomerCommissionRes.IsOk = false;
+            CustomerCommissionRes.responseMsg = ex.Message.ToString();
+            return BadRequest(CustomerCommissionRes);
+         }
+         return Ok(CustomerCommissionRes);
+      }
+
+      //=================GetCustomerCommission=====================
+      [HttpPost("PostCustomerCommissionSetting")]
+      public async Task<ActionResult> PostCustomerCommissionSetting(TbCusCommission model)
+      {
+         try
+         {
+            await ICus.SetCustomerCommission(model);
+         }
+         catch (Exception ex)
+         {
+            return BadRequest(ex.Message);
+         }
+         return StatusCode(201);
       }
 
       private async Task<AccountDtos> GetUserInfo()

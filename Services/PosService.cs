@@ -25,11 +25,15 @@ namespace MtekApi.Services
 
       public async Task<int> PostSale(List<PosSaleDto> productSale)
       {
+         string billType = productSale[0].billtype;
          string billCd = DateTime.Now.ToString("yyMMdd", en_US);
          var billHeader = new TbBillHeader();
          var billWo = new List<TbBillWo>();
          //billHeader = productSale[0].Adapt<TbBillHeader>();
          billHeader = fromBillMainSaleDto(productSale[0]);
+         var total = productSale.Sum(p => p.Amount);
+         billHeader.GAmt = total;
+         billHeader.GTotal = total;
          billWo = productSale.Select(fromBillWoSaleDto).ToList();
 
          //======= Check Qty must more than 0 ===========
@@ -44,7 +48,7 @@ namespace MtekApi.Services
          var _lookingGuid = await dbContext.TbBillHeaders.Where(p => p.Guid == _guid).FirstOrDefaultAsync();
          if (_lookingGuid == null)
          {
-            int _lookingBill = (await dbContext.TbBillHeaders.CountAsync()) + 1;
+            int _lookingBill = (await dbContext.TbBillHeaders.Where(p => p.Billcd.StartsWith(billType)).CountAsync()) + 1;
             billCd = productSale[0].billtype + billCd + "-" + _lookingBill.ToString();
 
             billHeader.Billcd = billCd;

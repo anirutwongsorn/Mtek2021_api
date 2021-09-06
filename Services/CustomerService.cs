@@ -50,6 +50,22 @@ namespace MtekApi.Services
          return model.CusId;
       }
 
+      public async Task<TbCusCommission> GetCustomerCommission(int cusid)
+      {
+         var model = await dbContext.TbCusCommissions.Where(p => p.CusId == cusid).FirstOrDefaultAsync();
+         if (model == null)
+         {
+            throw new Exception("ไม่พบข้อมูลลูกค้า");
+         }
+         return model;
+      }
+
+      public async Task SetCustomerCommission(TbCusCommission model)
+      {
+         dbContext.TbCusCommissions.Add(model);
+         await dbContext.SaveChangesAsync();
+      }
+
       public async Task<List<CustomerDtos>> GetCustomerById(string cusid)
       {
          int id = 0;

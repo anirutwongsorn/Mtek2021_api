@@ -14,5 +14,7 @@ namespace MtekApi.Interfaces
       Task<List<SaleReportDto>> GetSaleReportByCus(DateTime dateFrom, DateTime dateTo, int cusid);
 
       Task<List<ProductCusDto>> GetSaleBillMainByCusid(int cusid);
+
+      Task<List<SaleReportCusDtos>> GetSaleReportWithCommission();
    }
 }

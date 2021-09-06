@@ -21,13 +21,13 @@ namespace mtek_api.Data
         public virtual DbSet<TbBanner> TbBanners { get; set; }
         public virtual DbSet<TbBillHeader> TbBillHeaders { get; set; }
         public virtual DbSet<TbBillWo> TbBillWos { get; set; }
+      public virtual DbSet<TbCusCommission> TbCusCommissions { get; set; }
         public virtual DbSet<TbCustomer> TbCustomers { get; set; }
         public virtual DbSet<TbExpense> TbExpenses { get; set; }
         public virtual DbSet<TbProduct> TbProducts { get; set; }
         public virtual DbSet<TbProductBranch> TbProductBranches { get; set; }
         public virtual DbSet<TbProductGroup> TbProductGroups { get; set; }
-        public virtual DbSet<TbThaiLocation> TbThaiLocations { get; set; }
-
+      public virtual DbSet<TbThaiLocation> TbThaiLocations { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("Relational:Collation", "Thai_100_CI_AS");
@@ -168,7 +168,28 @@ namespace mtek_api.Data
                     .HasConstraintName("FK_TbBillWo_TbProduct");
             });
 
-            modelBuilder.Entity<TbCustomer>(entity =>
+         modelBuilder.Entity<TbCusCommission>(entity =>
+         {
+            entity.ToTable("TbCusCommission");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+
+            entity.Property(e => e.Com).HasColumnName("COM");
+
+            entity.Property(e => e.CusId).HasColumnName("CUS_ID");
+
+            entity.Property(e => e.FromDate)
+                   .HasColumnType("date")
+                   .HasColumnName("FROM_DATE")
+                   .HasDefaultValueSql("(getdate())");
+
+            entity.Property(e => e.ToDate)
+                   .HasColumnType("date")
+                   .HasColumnName("TO_DATE")
+                   .HasDefaultValueSql("(getdate())");
+         });
+
+         modelBuilder.Entity<TbCustomer>(entity =>
             {
                 entity.HasKey(e => e.CusId);
 
